@@ -16,7 +16,7 @@ my $args = GetOptions (
                     "yes|y"     => \&create_yes_list,
                     "groups|g"  => \&list_acl_groups,
                     "count|c"   => \&print_accuracy_count,
-                    "sanity|s"  => \$sanity,
+                    "sanity|s"  => \&sanity,
                     "test|t"    => \&test,
             );
 
@@ -31,7 +31,7 @@ sub import_acl_entries {
        
         chomp $entry;
         $acls->{ total_entries }++;
-        
+    
         if ( $entry =~ /hitcnt=/ ){
 
             my ( $acl, $hitcount ) 
@@ -42,8 +42,8 @@ sub import_acl_entries {
                 $acls->{ hit }++;
             }
             else {
-                push @{ $acls->{ 'miss_list' } }, $acl;
-                $acls->{ 'miss' }++;
+                push @{ $acls->{ miss_list } }, $acl;
+                $acls->{ miss }++;
             }       
         }
         else {
@@ -51,6 +51,14 @@ sub import_acl_entries {
             $acls->{ isnt_acl_count }++;
         }
 
+        # get groups
+
+        my $group = ( split( /\s+/, $entry ))[1];
+        if ( $group =~ /;/ ) {
+            $group =~ s/;//;
+            $acls->{ groups }{ $group } = 1;
+
+        }
     }
 }
 sub create_no_list {
@@ -74,6 +82,22 @@ sub print_accuracy_count {
     print "ACL hits: $acls->{ hit }\n";
     print "ACL miss: $acls->{ miss }\n";
 
+}
+sub list_acl_groups {
+
+    import_acl_entries();
+   
+    say $_ for sort keys %{ $acls->{ groups } };
+}
+sub sanity {
+
+    import_acl_entries();
+
+    say $_ for @{ $acls->{ isnt_acl } };
+
+    my $total_count = $acls->{ hit } + $acls->{ miss };
+    print "Total Entries: $acls->{ total_entries }\n";
+    print "Total ACLs:    $total_count\n"; 
 }
 sub test {
 
