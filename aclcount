@@ -17,6 +17,7 @@ my $args = GetOptions (
                     "groups|g"  => \&list_acl_groups,
                     "count|c"   => \&print_accuracy_count,
                     "sanity|s"  => \$sanity,
+                    "test|t"    => \&test,
             );
 
 sub import_acl_entries {
@@ -52,7 +53,6 @@ sub import_acl_entries {
 
     }
 }
-
 sub create_no_list {
 
     import_acl_entries();
@@ -61,12 +61,23 @@ sub create_no_list {
       print "no $acl\n";
   }
 } 
-
 sub create_yes_list {
 
     import_acl_entries();
 
     say $_ for @{ $acls->{ miss_list } };
 }
-#print Dumper $acls;
-#print "Rules hit:  $acl_status{ 'hit' }\nRules miss: $acl_status{ 'miss' }\n\n";
+sub print_accuracy_count {
+
+    import_acl_entries();
+
+    print "ACL hits: $acls->{ hit }\n";
+    print "ACL miss: $acls->{ miss }\n";
+
+}
+sub test {
+
+    import_acl_entries();
+
+    say "$_" for keys %$acls;
+}
