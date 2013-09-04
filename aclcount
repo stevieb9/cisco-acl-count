@@ -1,0 +1,72 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+use 5.12.0;
+
+use Getopt::Long;
+use Data::Dumper;
+
+my ( $acl_list, $create_no_list, $create_yes_list, $list_acl_groups, $sanity );
+my $acls; # master hash
+
+my $args = GetOptions (
+                    "file|f=s"  => \$acl_list,
+                    "no|n"      => \&create_no_list,
+                    "yes|y"     => \&create_yes_list,
+                    "groups|g"  => \&list_acl_groups,
+                    "count|c"   => \&print_accuracy_count,
+                    "sanity|s"  => \$sanity,
+            );
+
+sub import_acl_entries {
+
+    $acl_list = "acl.txt" if ! $acl_list;
+
+    open my $acl_file, '<', $acl_list 
+        or die "Can't open the ACL list!: $!";
+
+    while ( my $entry = <$acl_file> ){
+       
+        chomp $entry;
+        $acls->{ total_entries }++;
+        
+        if ( $entry =~ /hitcnt=/ ){
+
+            my ( $acl, $hitcount ) 
+              = $entry =~ /(.*)\(hitcnt=(\d+)/;
+
+              if ( $hitcount ) {
+                push @{ $acls->{ hit_list } }, $acl;
+                $acls->{ hit }++;
+            }
+            else {
+                push @{ $acls->{ 'miss_list' } }, $acl;
+                $acls->{ 'miss' }++;
+            }       
+        }
+        else {
+            push @{ $acls->{ isnt_acl } }, $entry;
+            $acls->{ isnt_acl_count }++;
+        }
+
+    }
+}
+
+sub create_no_list {
+
+    import_acl_entries();
+
+    for my $acl ( @{ $acls->{ miss_list } } ){
+      print "no $acl\n";
+  }
+} 
+
+sub create_yes_list {
+
+    import_acl_entries();
+
+    say $_ for @{ $acls->{ miss_list } };
+}
+#print Dumper $acls;
+#print "Rules hit:  $acl_status{ 'hit' }\nRules miss: $acl_status{ 'miss' }\n\n";
